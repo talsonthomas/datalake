@@ -1,0 +1,99 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "postgresql.primary.fullname" . }}-pgadmin-pvc
+  annotations:
+    volume.beta.kubernetes.io/storage-class: {{ .Values.pgadmin.storageClassName }}
+  labels:
+    volume: pgadmin
+spec:
+  accessModes: [{{ .Values.pgadmin.accessMode | quote }}]
+  resources:
+    requests:
+      storage: {{ .Values.pgadmin.size | quote }}
+  storageClassName: {{ .Values.pgadmin.storageClassName }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "postgresql.primary.fullname" . }}-pgadmin-secret
+type: Opaque
+data:
+  pgadmin-default-password: {{ .Values.pgadmin.passwd }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "postgresql.primary.fullname" . }}-pgadmin
+spec:
+  serviceName: "pgadmin"
+  selector:
+   matchLabels:
+    app: pgadmin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - name: pgadmin4
+        image: {{ .Values.pgadmin.image }}
+        volumeMounts:
+        - mountPath: /var/lib/pgadmin
+          name: pgadmin-volume
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: {{ .Values.pgadmin.user }}
+        - name: PGADMIN_DEFAULT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "postgresql.primary.fullname" . }}-pgadmin-secret
+              key: pgadmin-default-password
+        - name: SCRIPT_NAME
+          value: /pgadmin
+        ports:
+        - containerPort: 80
+          name: pgadminport
+      volumes:
+        - name: pgadmin-volume
+          persistentVolumeClaim:
+            claimName: {{ include "postgresql.primary.fullname" . }}-pgadmin-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "postgresql.primary.fullname" . }}-pgadmin
+  labels:
+    app: pgadmin
+spec:
+  selector:
+   app: pgadmin
+  type: ClusterIP
+  ports:
+   - port: 80
+{{- if .Values.pgadmin.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "postgresql.primary.fullname" . }}-pgadmin-ingress
+  {{- with .Values.pgadmin.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.pgadmin.ingress.ingressClassName }}
+  rules:
+  - host: {{ .Values.pgadmin.ingress.hostName }}
+    http:
+      paths:
+      - path: {{ .Values.pgadmin.ingress.path }}
+        pathType: {{ .Values.pgadmin.ingress.pathType }}
+        backend:
+          service:
+            name: {{ include "postgresql.primary.fullname" . }}-pgadmin
+            port:
+              number: 80
+{{- end }}
