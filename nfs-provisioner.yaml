@@ -100,6 +100,6 @@ spec:
               value: /nfsdata
       volumes:
         - name: nfs-client-root
-          nfs:
-            server: corenode
+          hostpath:
+            # server: corenode
             path: /nfsdata
