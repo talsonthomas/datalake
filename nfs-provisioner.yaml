@@ -85,7 +85,7 @@ spec:
       serviceAccountName: nfs-provisioner
       containers:
         - name: nfs-provisioner
-          image: scr.saal.ai/nfs-provisioner:1.20
+          image: corenode.talson.ae:5000/nfs-provisioner:1.20
           # securityContext:
           #   runAsUser: 65534
           volumeMounts:
