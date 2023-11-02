@@ -98,5 +98,5 @@ spec:
             value: /nfsdata
       volumes:
       - name: nfs-client-root
-        hostpath:
+        hostPath:
           path: /nfsdata
