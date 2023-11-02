@@ -84,22 +84,19 @@ spec:
     spec:
       serviceAccountName: nfs-provisioner
       containers:
-        - name: nfs-provisioner
-          image: corenode.talson.ae:5000/nfs-provisioner:1.20
-          # securityContext:
-          #   runAsUser: 65534
-          volumeMounts:
-            - name: nfs-client-root
-              mountPath: /persistentvolumes
-          env:
-            - name: PROVISIONER_NAME
-              value: nfs-provisioner
-            - name: NFS_SERVER
-              value: corenode
-            - name: NFS_PATH
-              value: /nfsdata
-      volumes:
+      - name: nfs-provisioner
+        image: corenode.talson.ae:5000/nfs-provisioner:1.20
+        volumeMounts:
         - name: nfs-client-root
-          hostpath:
-            # server: corenode
-            path: /nfsdata
+          mountPath: /persistentvolumes
+        env:
+          - name: PROVISIONER_NAME
+            value: nfs-provisioner
+          - name: NFS_SERVER
+            value: corenode
+          - name: NFS_PATH
+            value: /nfsdata
+      volumes:
+      - name: nfs-client-root
+        hostpath:
+          path: /nfsdata
